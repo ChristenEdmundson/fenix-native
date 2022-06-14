@@ -33,6 +33,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
@@ -121,8 +122,22 @@ class ThreeDotMenuMainRobot {
     }
 
     fun verifyAddonAvailableInMainMenu(addonName: String) {
-        onView(withText(addonName))
-            .check(matches(isDisplayed()))
+        try {
+            assertTrue(
+                "Addon not listed in the Add-ons menu",
+                mDevice.findObject(UiSelector().text(addonName)).waitForExists(waitingTime)
+            )
+        } catch (e: AssertionError) {
+            mDevice.pressBack()
+            browserScreen {
+            }.openThreeDotMenu {
+                openAddonsSubList()
+                assertTrue(
+                    "Addon not listed in the Add-ons menu",
+                    mDevice.findObject(UiSelector().text(addonName)).waitForExists(waitingTime)
+                )
+            }
+        }
     }
 
     class Transition {
@@ -340,6 +355,8 @@ class ThreeDotMenuMainRobot {
 
         fun openAddonsManagerMenu(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
             clickAddonsManagerButton()
+            mDevice.findObject(UiSelector().resourceId("$packageName:id/add_ons_list"))
+                .waitForExists(waitingTimeLong)
 
             SettingsSubMenuAddonsManagerRobot().interact()
             return SettingsSubMenuAddonsManagerRobot.Transition()
